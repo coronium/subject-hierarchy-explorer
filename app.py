@@ -544,6 +544,84 @@ tr:hover { background: #fafbfc; }
     font-family: var(--font-mono); font-size: 12px; line-height: 1.6;
     max-height: 500px; overflow-y: auto;
 }
+
+/* Tooltips */
+.has-tooltip { position: relative; }
+.has-tooltip .tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--deep-space-blue);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.5;
+    white-space: normal;
+    width: 260px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    pointer-events: none;
+}
+.has-tooltip .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--deep-space-blue);
+}
+.has-tooltip:hover .tooltip { display: block; }
+.filter-group .has-tooltip-label { position: relative; cursor: help; border-bottom: 1px dotted var(--charcoal-blue); }
+.filter-group .has-tooltip-label .tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    background: var(--deep-space-blue);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.5;
+    white-space: normal;
+    width: 240px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.filter-group .has-tooltip-label .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 20px;
+    border: 6px solid transparent;
+    border-top-color: var(--deep-space-blue);
+}
+.filter-group .has-tooltip-label:hover .tooltip { display: block; }
+
+/* About page */
+.about-content { max-width: 800px; }
+.about-content h2 { font-size: 18px; font-weight: 600; margin: 28px 0 12px 0; color: var(--deep-space-blue); }
+.about-content h2:first-child { margin-top: 0; }
+.about-content p { margin-bottom: 12px; color: #444; }
+.about-content ul { margin: 8px 0 16px 20px; color: #444; }
+.about-content li { margin-bottom: 6px; }
+.about-content strong { color: var(--deep-space-blue); }
+.about-content .example-box {
+    background: var(--sky-light); border-radius: 8px; padding: 16px 20px;
+    margin: 12px 0 16px 0; font-size: 13px;
+}
+.about-content .example-box p { margin-bottom: 6px; }
+.about-content .example-box p:last-child { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -562,6 +640,7 @@ tr:hover { background: #fafbfc; }
     <div class="tab" onclick="switchTab('explorer')">Concept Explorer</div>
     <div class="tab" onclick="switchTab('tree')">Hierarchy Tree</div>
     <div class="tab" onclick="switchTab('export')">Export</div>
+    <div class="tab" onclick="switchTab('about')">About</div>
 </div>
 
 <div class="container">
@@ -573,19 +652,27 @@ tr:hover { background: #fafbfc; }
             <input type="text" id="filterText" placeholder="e.g. astronomy, physics..." onkeydown="if(event.key==='Enter') loadRelationships()">
         </div>
         <div class="filter-group">
-            <label>Min P(B|A)</label>
+            <label class="has-tooltip-label">Min P(B|A)
+                <span class="tooltip">Only show relationships where the broader term appears at least this often alongside the narrower. Raise to see only strong relationships.</span>
+            </label>
             <input type="number" id="filterMinP" value="0.3" min="0" max="1" step="0.05">
         </div>
         <div class="filter-group">
-            <label>Min asymmetry</label>
+            <label class="has-tooltip-label">Min asymmetry
+                <span class="tooltip">Only show relationships with at least this much one-sidedness. Raise to filter out peer-like co-occurrences and keep only clear hierarchies.</span>
+            </label>
             <input type="number" id="filterMinAsym" value="1.5" min="1" step="0.5">
         </div>
         <div class="filter-group">
-            <label>Min co-occurrences</label>
+            <label class="has-tooltip-label">Min co-occurrences
+                <span class="tooltip">Minimum number of citations where both subjects appear. Raise to require more evidence behind each relationship.</span>
+            </label>
             <input type="number" id="filterMinCooc" value="5" min="1" step="1">
         </div>
         <div class="filter-group">
-            <label>Min citations</label>
+            <label class="has-tooltip-label">Min citations
+                <span class="tooltip">Minimum number of citations for the narrower term. Filters out very rare subjects where statistics may be unreliable.</span>
+            </label>
             <input type="number" id="filterMinCount" value="10" min="1" step="5">
         </div>
         <div class="filter-group">
@@ -597,13 +684,20 @@ tr:hover { background: #fafbfc; }
     <table id="relTable">
         <thead>
             <tr>
-                <th onclick="sortBy('narrower_name')">Narrower Term <span class="sort-arrow">&#9650;</span></th>
-                <th onclick="sortBy('broader_name')">Broader Term <span class="sort-arrow">&#9650;</span></th>
-                <th onclick="sortBy('p_broader_given_narrower')" class="sorted">P(B|A) <span class="sort-arrow">&#9660;</span></th>
-                <th onclick="sortBy('p_narrower_given_broader')">P(A|B) <span class="sort-arrow">&#9650;</span></th>
-                <th onclick="sortBy('asymmetry')">Asymmetry <span class="sort-arrow">&#9650;</span></th>
-                <th onclick="sortBy('cooc_count')">Co-occur <span class="sort-arrow">&#9650;</span></th>
-                <th>Counts</th>
+                <th onclick="sortBy('narrower_name')" class="has-tooltip">Narrower Term <span class="sort-arrow">&#9650;</span>
+                    <span class="tooltip">The more specific subject. When this term appears on a citation, the broader term usually appears too.</span></th>
+                <th onclick="sortBy('broader_name')" class="has-tooltip">Broader Term <span class="sort-arrow">&#9650;</span>
+                    <span class="tooltip">The more general subject. This term appears on many citations without the narrower term.</span></th>
+                <th onclick="sortBy('p_broader_given_narrower')" class="sorted has-tooltip">P(B|A) <span class="sort-arrow">&#9660;</span>
+                    <span class="tooltip">How often the broader term appears when the narrower term is present. 80% means "4 out of 5 times the narrow subject appears, the broad one is there too."</span></th>
+                <th onclick="sortBy('p_narrower_given_broader')" class="has-tooltip">P(A|B) <span class="sort-arrow">&#9650;</span>
+                    <span class="tooltip">How often the narrower term appears when the broader term is present. This is usually much lower, confirming the hierarchy.</span></th>
+                <th onclick="sortBy('asymmetry')" class="has-tooltip">Asymmetry <span class="sort-arrow">&#9650;</span>
+                    <span class="tooltip">How one-sided the relationship is (P(B|A) / P(A|B)). High values (green) mean a clear parent-child hierarchy. Low values mean the terms are more like peers.</span></th>
+                <th onclick="sortBy('cooc_count')" class="has-tooltip">Co-occur <span class="sort-arrow">&#9650;</span>
+                    <span class="tooltip">Number of citations where both subjects appear together. Higher numbers mean more evidence behind the relationship.</span></th>
+                <th class="has-tooltip">Counts
+                    <span class="tooltip">Citation counts for each term individually (narrower / broader). Shows how common each subject is in the bibliography.</span></th>
             </tr>
         </thead>
         <tbody id="relBody"></tbody>
@@ -682,6 +776,90 @@ tr:hover { background: #fafbfc; }
     </div>
 </div>
 
+<!-- TAB 5: About -->
+<div class="tab-content" id="tab-about">
+    <div class="concept-panel about-content" style="max-width:800px;">
+        <h2>What is this?</h2>
+        <p>This tool analyzes <strong>how IsisCB subject terms relate to each other</strong> by looking at which subjects
+        appear together on the same citations. It uses the full IsisCB Cumulative Bibliography
+        (~139,000 citations tagged with ~7,800 subject terms) to automatically discover which
+        subjects are broader and which are narrower.</p>
+
+        <div class="example-box">
+            <p><strong>The key idea:</strong> If "Stellar astrophysics" almost always appears alongside
+            "Astronomy," but "Astronomy" appears on many citations without "Stellar astrophysics,"
+            then Stellar astrophysics is a <strong>narrower</strong> term under Astronomy.</p>
+        </div>
+
+        <h2>Understanding the numbers</h2>
+        <ul>
+            <li><strong>P(B|A)</strong> &mdash; When the narrower term appears, how often does the broader term
+            also appear? Higher = stronger relationship. 80% means "4 out of 5 times this narrow
+            subject shows up, the broader one is there too."</li>
+
+            <li><strong>P(A|B)</strong> &mdash; The reverse: when the broader term appears, how often does the
+            narrower one also appear? This is usually much lower, which is what makes it a hierarchy
+            rather than a simple correlation.</li>
+
+            <li><strong>Asymmetry</strong> &mdash; How one-sided is the relationship? Calculated as P(B|A) divided
+            by P(A|B). A high number (shown in <span class="badge badge-strong">green</span>) means
+            the relationship is clearly hierarchical. A low number means the two terms co-occur
+            roughly equally &mdash; they're more like peers than parent/child.</li>
+
+            <li><strong>Co-occurrences</strong> &mdash; How many citations have both terms. Higher numbers mean
+            more evidence behind the relationship.</li>
+
+            <li><strong>Counts</strong> &mdash; How many citations each term appears on individually
+            (narrower / broader).</li>
+        </ul>
+
+        <h2>The tabs</h2>
+
+        <p><strong>Relationships Table</strong> &mdash;
+        A searchable, sortable list of all discovered broader/narrower relationships.
+        Type a subject in the search box to filter. Good for answering: "What subjects are related to X?"
+        Hover over any column header for an explanation. Click column headers to sort.</p>
+
+        <p><strong>Concept Explorer</strong> &mdash;
+        Type any subject name and see its full profile:</p>
+        <ul>
+            <li><strong>Broader Terms</strong> (left): Subjects that tend to appear whenever this one does &mdash;
+            these are the "parent" categories it falls under</li>
+            <li><strong>Narrower Terms</strong> (right): More specific subjects that imply this one &mdash;
+            these are its "children"</li>
+            <li><strong>Symmetric/Peer Relationships</strong> (bottom): Subjects that frequently co-occur without
+            a clear hierarchy &mdash; these are siblings or related topics</li>
+        </ul>
+        <p>Click any subject name to navigate to it.</p>
+
+        <p><strong>Hierarchy Tree</strong> &mdash;
+        A visual tree showing the full subject hierarchy. Click the + buttons to expand branches.
+        Good for getting an overview of how subjects nest under each other.</p>
+
+        <p><strong>Export</strong> &mdash;
+        Generates the discovered relationships in a structured text format (YAML) for use in other tools.</p>
+
+        <h2>Tips</h2>
+        <ul>
+            <li>Start with the <strong>Concept Explorer</strong> tab &mdash; type a broad subject you're
+            interested in (e.g., "Medicine," "Physics," "Evolution") and explore from there.</li>
+            <li>The filter controls let you adjust sensitivity. If you're seeing too much noise,
+            raise the "Min P(B|A)" and "Min asymmetry" values. If you're missing relationships,
+            lower them.</li>
+            <li>Hover over any filter label or column header for an explanation of what it does.</li>
+            <li>Some relationships may look surprising &mdash; that's part of the value. The data
+            reflects how IsisCB editors have <em>actually</em> tagged citations, which may reveal
+            connections that aren't obvious from the term names alone.</li>
+        </ul>
+
+        <h2>Data source</h2>
+        <p>All data comes from the <a href="https://isiscb.org" style="color:var(--color-primary)">IsisCB Cumulative Bibliography</a>,
+        a comprehensive bibliography of the history of science, technology, and medicine.
+        Subject relationships were computed from co-occurrence patterns across all citations
+        in the database.</p>
+    </div>
+</div>
+
 </div>
 
 <script>
@@ -692,7 +870,7 @@ function switchTab(name) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     const tabs = document.querySelectorAll('.tab');
-    const tabNames = ['relationships', 'explorer', 'tree', 'export'];
+    const tabNames = ['relationships', 'explorer', 'tree', 'export', 'about'];
     const idx = tabNames.indexOf(name);
     if (idx >= 0) tabs[idx].classList.add('active');
     document.getElementById('tab-' + name).classList.add('active');
